@@ -1,0 +1,27 @@
+email:
+  allowed_domains:
+    - "company.com"
+  require_confirmation: true
+  block_external_by_default: true
+
+drive:
+  require_confirmation_for_sharing: true
+  allowed_domains:
+    - "company.com"
+
+calendar:
+  require_confirmation_for_changes: true
+
+data:
+  max_results: 20
+  allow_bulk_export: false
+
+security:
+  block_prompt_injection: true
+  redact_credentials: true
+
+execution:
+  allow_external_actions: false
+
+ux:
+  require_confirmation: true

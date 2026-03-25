@@ -1,0 +1,25 @@
+devices:
+  allowed_devices:
+    - "bed"
+
+temperature:
+  min_safe_temp: 15
+  max_safe_temp: 35
+  require_confirmation: true
+
+alarms:
+  require_confirmation: true
+
+schedules:
+  require_confirmation: true
+
+credentials:
+  redact: true
+  block_output: true
+
+api:
+  prevent_relogin: true
+  rate_limit_safe: true
+
+ux:
+  require_confirmation: true

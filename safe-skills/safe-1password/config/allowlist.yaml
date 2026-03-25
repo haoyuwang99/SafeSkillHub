@@ -1,0 +1,64 @@
+policy:
+  default_secret_read_verdict: confirm
+  default_signin_verdict: confirm
+  default_metadata_verdict: allow
+
+accounts:
+  allowed_accounts:
+    - "my.1password.com"
+  require_explicit_account_for_confirm_ops: true
+
+vaults:
+  allowed_vaults:
+    - "Private"
+    - "Engineering"
+  block_if_vault_unspecified_for_secret_ops: true
+  block_bulk_enumeration: true
+  max_items_for_metadata_listing: 20
+
+tmux:
+  require_dedicated_session: true
+  allowed_socket_dir_prefixes:
+    - "/tmp/clawdbot-tmux-sockets"
+    - "/private/tmp/clawdbot-tmux-sockets"
+  forbid_reusing_old_session_names: true
+  forbid_capture_after_secret_commands: true
+
+output:
+  redact_secret_values: true
+  allow_masked_preview_only: true
+  masked_preview_style: "<redacted>"
+  allow_raw_pane_output_for_metadata_only: false
+  max_output_lines_for_safe_summary: 20
+
+filesystem:
+  block_plaintext_secret_writes: true
+  blocked_write_paths:
+    - "~/.zshrc"
+    - "~/.bashrc"
+    - "~/.profile"
+    - ".env"
+    - "/tmp"
+  allow_ephemeral_pipe_only: true
+
+network:
+  block_external_transmission: true
+  allowed_destinations: []
+
+detection:
+  secret_commands:
+    - "op read"
+    - "op item get"
+    - "op document get"
+    - "op inject"
+    - "op run"
+  metadata_commands:
+    - "op --version"
+    - "op whoami"
+    - "op account list"
+    - "op vault list"
+
+ux:
+  require_confirmation_message: true
+  require_scope_summary: true
+  require_risk_summary: true

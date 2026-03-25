@@ -1,0 +1,20 @@
+api:
+  max_tokens: 8000
+  require_confirmation_above: 4000
+
+data:
+  block_sensitive: true
+  allowed_types:
+    - text
+    - code
+
+security:
+  block_prompt_injection: true
+  redact_api_key: true
+
+execution:
+  allow_recursive_calls: false
+  max_calls_per_task: 3
+
+ux:
+  require_confirmation: true

@@ -1,0 +1,22 @@
+paths:
+  allowed_directories:
+    - "/home/user/downloads"
+  block_system_paths: true
+
+patterns:
+  blocked_keywords:
+    - "password"
+    - "token"
+    - "api_key"
+    - "secret"
+
+scan:
+  max_files: 100
+  require_confirmation_above: 50
+
+output:
+  max_results: 20
+  redact_sensitive: true
+
+ux:
+  require_confirmation: true

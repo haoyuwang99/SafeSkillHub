@@ -1,0 +1,24 @@
+cameras:
+  allowed_hosts:
+    - "192.168.0.10"
+  require_confirmation_for_new_camera: true
+
+capture:
+  allow_snapshot: true
+  allow_clip: true
+  max_clip_duration: 10s
+
+privacy:
+  block_media_output: true
+  redact_credentials: true
+
+execution:
+  allow_watch: false
+  allow_watch_action: false
+
+network:
+  allow_local_only: true
+  block_external_streams: true
+
+ux:
+  require_confirmation: true

@@ -1,0 +1,18 @@
+api:
+  max_queries_per_task: 5
+  require_confirmation_above: 3
+
+location:
+  allow_coordinates: true
+  require_confirmation_for_coordinates: true
+  max_radius_km: 5
+
+output:
+  max_results: 10
+  filter_reviews: true
+
+security:
+  redact_api_key: true
+
+ux:
+  require_confirmation: true

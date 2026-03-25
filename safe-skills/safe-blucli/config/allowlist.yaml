@@ -1,0 +1,24 @@
+devices:
+  allowed_devices:
+    - "living-room"
+  require_explicit_device: true
+
+volume:
+  max_safe_volume: 70
+  require_confirmation: true
+
+playback:
+  require_confirmation: true
+
+grouping:
+  require_confirmation: true
+
+network:
+  allow_discovery: true
+  limit_scan_frequency: true
+
+execution:
+  block_raw_commands: true
+
+ux:
+  require_confirmation: true

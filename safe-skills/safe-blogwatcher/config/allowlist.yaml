@@ -1,0 +1,50 @@
+policy:
+  default_install_verdict: confirm
+  default_add_feed_verdict: confirm
+  default_scan_verdict: allow
+  default_single_read_verdict: allow
+  default_bulk_state_change_verdict: confirm
+
+install:
+  allowed_install_hosts:
+    - "github.com"
+  prefer_pinned_version: true
+  allow_latest: false
+
+feeds:
+  allowed_schemes:
+    - "http"
+    - "https"
+  blocked_hosts:
+    - "localhost"
+    - "127.0.0.1"
+    - "::1"
+  blocked_cidrs:
+    - "127.0.0.0/8"
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+    - "192.168.0.0/16"
+    - "169.254.0.0/16"
+    - "fc00::/7"
+    - "fe80::/10"
+  require_confirmation_for_new_domains: true
+  allowed_domains: []
+
+scan:
+  max_feeds_per_scan: 20
+  max_output_lines: 30
+  summarize_only: true
+
+articles:
+  default_preview_count: 10
+  max_preview_count: 20
+
+state_changes:
+  confirm_read_all: true
+  confirm_remove_blog: true
+  block_bulk_remove: true
+
+ux:
+  require_scope_summary: true
+  require_risk_summary: true
+  require_confirmation_message: true
