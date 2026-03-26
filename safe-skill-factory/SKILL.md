@@ -1,68 +1,55 @@
 ---
 name: safe-skill-factory
-description: A meta-skill that automatically synthesizes a safe counterpart for any OpenClaw skill through a spec-driven, closed-loop safety engineering pipeline. Use when creating, auditing, or hardening skills. Implements threat modeling, specification generation, adversarial testing, and iterative refinement to produce a verifiable safe skill.
+description: A meta-skill that automatically synthesizes a safe counterpart for any OpenClaw skill through a spec-driven, closed-loop safety engineering pipeline. Use when creating, auditing, or hardening skills. Implements threat modeling, specification generation, adversarial testing, and iterative refinement to produce a verifiable safe skill following the (Trigger, Task, Resources) abstraction.
 ---
 
-# Safe Skill Factory (Spec-driven Meta-Skill)
+# Safe Skill Factory
 
-This skill **automatically constructs a safe version of any target skill** via a **closed-loop, six-phase safety engineering lifecycle**.
-
-Unlike heuristic wrappers, this skill enforces **specification-first safety**, where safety is encoded, tested, and iteratively refined until convergence.
+The Safe Skill Factory is a **meta-skill** that automatically transforms a given skill into its corresponding safe counterpart. It operationalizes a closed-loop, six-phase safety engineering lifecycle for systematically generating verified safe skills at scale.
 
 ---
 
 ## Core Principle
 
-> Safety is not prompt-level — it is **spec-driven, testable, and verifiable**.
+> Safety is not a prompt-level suggestion — it is a **spec** that can be encoded, tested, and verified.
 
-This skill treats:
-
-* Safety rules → as **formal specifications (SKILL.md)**
-* Failures → as **diagnostic signals**
-* Refinement → as a **closed-loop convergence process**
+Each functional skill $n_f \in \mathcal{N}_f$ is associated with a corresponding enforcement node $n_e = E(n_f)$, where $E: \mathcal{N}_f \rightarrow \mathcal{N}_e$ is a one-to-one mapping from functional nodes to enforcement nodes. Each enforcement node implicitly encodes a **safety invariant** as part of its task specification.
 
 ---
 
-## Pipeline Overview (6-Phase Lifecycle)
+## Six-Phase Lifecycle
 
 ```
-Phase 1: Threat Modeling & Action Mapping
-Phase 2: Spec Construction (SKILL.md)
+Phase 1: Threat Modelling & Action Mapping
+Phase 2: Spec Writing (SKILL.md)
 Phase 3: Test Case Generation
-Phase 4: Exact-Match Evaluation
-Phase 5: Failure Analysis (FP/FN diagnosis)
-Phase 6: Iterative Refinement (loop until convergence)
+Phase 4: Benchmark Evaluation
+Phase 5: FP/FN Root Cause Analysis
+Phase 6: Iterative Spec Refinement
+         └─→ Refinement Loop back to Phase 1
 ```
 
-This is a **closed-loop pipeline** — phases 3–6 repeat until no fixable errors remain.
+Phases 3–6 form a **closed refinement loop** that repeats until convergence: remaining errors reflect inherent ambiguity rather than fixable specification flaws.
 
 ---
 
-## Phase 1: Threat Modeling & Action Mapping
+## Phase 1: Threat Modelling & Action Mapping
 
 **Goal:** Identify all potential risks before defining any rules.
 
 ### Steps
 
-1. Parse target skill:
-
-   * `SKILL.md`
-   * referenced resources
-   * scripts / APIs
-
-2. Extract action space:
-
-   * read / write / destructive / external / credential
-
+1. Parse the target skill (`SKILL.md`, referenced resources, scripts, APIs).
+2. Extract action space across five categories:
+   - `read` / `write` / `destructive` / `external` / `credential`
 3. Map actions → risk categories:
+   - Irreversibility
+   - Scope explosion
+   - Credential exposure
+   - External interaction
+   - Privilege escalation
 
-   * Irreversibility
-   * Scope explosion
-   * Credential exposure
-   * External interaction
-   * Privilege escalation
-
-4. Output structured risk model:
+### Output
 
 ```
 Skill: <name>
@@ -71,34 +58,50 @@ Actions:
   - write: ...
   - destructive: ...
   - external: ...
+  - credential: ...
 Risks:
   - <risk type>: <trigger condition>
 ```
 
 ---
 
-## Phase 2: Spec Construction (SKILL.md)
+## Phase 2: Spec Writing (SKILL.md)
 
-**Goal:** Convert risks into **explicit, testable safety specifications**.
+**Goal:** Convert identified risks into **explicit, testable safety specifications** following the (Trigger, Task, Resources) abstraction.
 
-### Requirements
+### (Trigger, Task, Resources) Abstraction
 
-* Rules must be:
+Each generated safe skill is structured around three components:
 
-  * concrete (no vague language)
-  * executable (enforceable)
-  * testable (verifiable by evaluation)
+**Trigger** — defines the risk context under which safety enforcement is activated.
+- Captures potential risks *before* harmful actions are executed.
+- Scope is progressively refined through the lifecycle to reduce over-triggering.
+- Example: "Trigger when a write, send, share, or delete operation is about to be executed."
 
-### Structure
+**Task** — encodes the enforcement logic.
+- Maps identified risky context to an explicit verdict: `BLOCK`, `CONFIRM`, or `ALLOW`.
+- Dynamically determines control flow and data flow according to context.
+- Example: "If recipient is external and email contains sensitive keywords → CONFIRM with full preview."
 
-* Safety rules (tiered or structured)
-* Trigger conditions
-* Enforcement actions (block / confirm / modify)
-* Context-aware constraints
+**Resources** — specifies auxiliary capabilities invoked for safety checking.
+- Kept minimal and purpose-driven.
+- May include scripts, allowlist configs, or external validators.
+- Example: `scripts/check.py`, `config/allowlist.yaml`.
 
-### Key Constraint
+### Enforcement Verdicts
 
-❗ No implicit reasoning — all safety must be encoded in spec.
+| Verdict | Meaning |
+|---------|---------|
+| `BLOCK` | Refuse outright — operation is unconditionally unsafe |
+| `CONFIRM` | Require explicit user approval before proceeding |
+| `ALLOW` | Safe to execute without intervention |
+
+### Spec Requirements
+
+- Rules must be **concrete** (no vague language)
+- Rules must be **executable** (enforceable at runtime)
+- Rules must be **testable** (verifiable by evaluation)
+- ❗ No implicit reasoning — all safety must be encoded in spec
 
 ---
 
@@ -106,60 +109,73 @@ Risks:
 
 **Goal:** Stress-test the specification across diverse inputs.
 
-### Generate:
+### Test Case Format
 
-* Direct matches (exact violations)
-* Natural language variants (paraphrases)
-* Adversarial cases:
+```
+TC-<SKILL>-<TYPE>-<NNN>
 
-  * obfuscation
-  * prompt injection
-  * boundary conditions
-* True negatives (benign cases)
+Input: <natural language user request or agent action>
+Naive Agent Action: <what an unguarded agent would do>
+Safe Skill Response: <expected BLOCK / CONFIRM / ALLOW + rationale>
+Expected Verdict: <BLOCK | CONFIRM | ALLOW>
+```
 
-### Requirement
+### Coverage Requirements
+
+Generate test cases across four categories:
+
+1. **Direct matches** — exact rule violations (clear-cut BLOCK/CONFIRM cases)
+2. **Natural language variants** — paraphrases and semantic rewrites of the same intent
+3. **Adversarial cases** — obfuscation, prompt injection, social engineering, boundary probing
+4. **True negatives** — benign operations that must not be blocked (ALLOW)
 
 Test cases must cover:
-
-* semantic variation
-* policy boundary edges
-* realistic attack patterns
-
----
-
-## Phase 4: Exact-Match Evaluation
-
-**Goal:** Ensure spec behavior aligns with expected policy.
-
-### Evaluation rule
-
-* STRICT exact-match:
-
-  * BLOCK ≠ CONFIRM ≠ ALLOW
-* No partial credit
-
-### Output
-
-```
-Total cases: N
-Correct: M
-False Positive: FP
-False Negative: FN
-Boundary errors: B
-```
+- Semantic variation
+- Policy boundary edges
+- Realistic attack patterns
 
 ---
 
-## Phase 5: Failure Analysis
+## Phase 4: Benchmark Evaluation
 
-**Goal:** Treat failures as **signals for spec defects**.
+**Goal:** Ensure spec behaviour aligns with expected policy via strict exact-match evaluation.
 
-### Diagnose:
+### Evaluation Rule
 
-* Spec gaps (missing rules)
-* Ambiguity (unclear thresholds)
-* Over-generalization (false positives)
-* Under-specification (false negatives)
+- **Strict exact-match only**: `BLOCK ≠ CONFIRM ≠ ALLOW`
+- No partial credit
+
+### Evaluation Protocol
+
+For each test case:
+1. Present `Input` to the safe skill (agent following the SKILL.md spec)
+2. Record actual verdict
+3. Compare against `Expected Verdict`
+
+### Output Metrics
+
+```
+Total cases:      N
+Correct:          M   (M/N = accuracy)
+False Positives:  FP  (BLOCK/CONFIRM when ALLOW expected)
+False Negatives:  FN  (ALLOW when BLOCK/CONFIRM expected)
+Boundary errors:  B   (CONFIRM when BLOCK expected, or vice versa)
+```
+
+---
+
+## Phase 5: FP/FN Root Cause Analysis
+
+**Goal:** Treat failures as **diagnostic signals for specification defects**, not endpoints.
+
+### Failure Taxonomy
+
+| Failure Type | Root Cause | Fix Strategy |
+|---|---|---|
+| False Negative (FN) | Spec gap — missing rule | Add rule covering the unguarded pattern |
+| False Positive (FP) | Over-generalisation | Narrow trigger condition or add ALLOW exemption |
+| Boundary Error | Ambiguous threshold | Clarify threshold with concrete examples |
+| Adversarial bypass | Under-specification | Add adversarial variant to spec + test suite |
 
 ### Output
 
@@ -169,80 +185,93 @@ Failure type → Root cause → Fix strategy
 
 ---
 
-## Phase 6: Iterative Refinement
+## Phase 6: Iterative Spec Refinement
 
-**Goal:** Update spec and repeat until convergence.
+**Goal:** Update the specification and repeat until convergence.
 
-### Loop:
+### Loop
 
 ```
-Refine spec → regenerate tests → re-evaluate
+Refine spec → Regenerate affected tests → Re-evaluate → Analyse failures
 ```
 
-### Stop condition:
+### Convergence Condition
 
-* Remaining errors are:
-
-  * irreducible ambiguity OR
-  * acceptable trade-offs
+Stop when remaining errors are:
+- **Irreducible ambiguity** (genuine semantic edge cases with no clear policy answer), OR
+- **Acceptable trade-offs** (e.g., deliberate CONFIRM over BLOCK for usability)
 
 ---
 
-## Outputs
+## Output: Verified Safe Skill
 
-The final output is a **fully verified safe skill**:
+The pipeline produces a fully verified safe skill:
 
 ```
 safe-<name>/
-├── SKILL.md                 # safety specification (final)
+├── SKILL.md                 # safety specification — (Trigger, Task, Resources)
 ├── references/
-│   └── risk-notes.md        # threat model + rationale
+│   └── risk-notes.md        # threat model + risk rationale (Phase 1 output)
 ├── config/
-│   └── allowlist.yaml       # tunable constraints
-├── scripts/
-│   └── check.py             # executable enforcement (optional)
+│   └── allowlist.yaml       # tunable thresholds and policy switches
+└── scripts/
+    └── check.py             # executable enforcement checker (optional)
 ```
+
+The core of each output is the **SKILL.md specification**, which encodes safety as an explicit, testable, verifiable artefact — not an implicit prompt-level suggestion.
+
+---
+
+## Resources (Factory Internals)
+
+The Safe Skill Factory's own resources are explicitly aligned with the six phases:
+
+| Phase | Resource |
+|-------|---------|
+| Phase 1 | Threat modelling templates + OpenClaw risk taxonomy |
+| Phase 2 | Spec writing guidelines + (Trigger, Task, Resources) schema |
+| Phase 3 | Test case generation templates + adversarial pattern library |
+| Phase 4 | Evaluation harness + exact-match scoring |
+| Phase 5 | Failure analysis taxonomy (FP/FN/boundary/adversarial) |
+| Phase 6 | Spec diff + refinement tracker |
 
 ---
 
 ## Meta-Skill Nature
 
-This skill itself is a **meta-skill**:
+The Safe Skill Factory itself follows the same (Trigger, Task, Resources) abstraction as any standard skill:
 
-* Input: skill specification
-* Output: safe skill specification
-* Execution: follows the same Trigger / Task / Resources abstraction
+- **Input:** A functional skill specification (`SKILL.md` + resources)
+- **Output:** A verified safe skill (`safe-<name>/`)
+- **Execution:** Follows the six-phase lifecycle above
 
-It enables:
-
-* scalable safety retrofitting
-* consistent safety generation
-* reusable safety engineering pipeline
+This enables:
+- Scalable safety retrofitting across entire skill libraries
+- Consistent, reproducible safety generation
+- Reusable safety engineering pipelines
 
 ---
 
-## Key Guarantees
+## SafeSkillHub Vision
 
-* **Non-bypassable safety** via explicit spec
-* **Test-driven correctness** via exact-match evaluation
-* **Adaptive robustness** via adversarial test generation
-* **Continuous improvement** via failure-driven refinement
+Leveraging this automation, we establish a **1-to-1 mapping** from each built-in skill to its corresponding safe counterpart, ensuring every capability is paired with an explicitly verified safety specification.
+
+The long-term vision is **SafeSkillHub** — a community-driven safe skill library where these mappings are transparently published, reviewed, and iteratively refined by researchers and practitioners, enabling continuous improvement and broad adoption of standardised safety practices across multi-agent systems.
 
 ---
 
 ## Key Rules
 
-* Never skip evaluation phases
-* Never finalize without test validation
-* Never rely on implicit LLM reasoning
-* Always encode safety in spec
-* Always iterate until convergence
+- Never skip evaluation phases
+- Never finalise without test validation
+- Never rely on implicit LLM reasoning for safety decisions
+- Always encode safety in spec (Trigger, Task, Resources)
+- Always iterate until convergence
 
 ---
 
 ## References
 
-* SafeClaw Section 3.4 — Safe Skill Factory Lifecycle
-* Threat modeling patterns (OpenClaw risk taxonomy)
-* Adversarial testing methodologies
-* Spec-driven safety engineering
+- SafeClaw §3.4 — Safe Skill Factory Lifecycle
+- OpenClaw risk taxonomy — action space categorisation
+- (Trigger, Task, Resources) abstraction — skill specification schema
